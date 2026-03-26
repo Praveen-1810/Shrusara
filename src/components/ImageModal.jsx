@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { contactLinks } from '../data/content';
-import LazyImage from './LazyImage';
 
 function buildWhatsAppMessage(item) {
   const title = item.title || item.alt || 'Boutique design';
@@ -12,60 +12,13 @@ function buildWhatsAppMessage(item) {
   const lines = [
     'I am interested in this design:',
     `Title: ${title}`,
-    `Description: ${description}`
+    `Description: ${description}`,
   ];
-
-  if (item.url) {
-    lines.push(`Image: ${item.url}`);
-  }
-
+  if (item.url) lines.push(`Image: ${item.url}`);
   return `${contactLinks.whatsapp.split('?')[0]}?text=${encodeURIComponent(lines.join('\n'))}`;
 }
 
-export default function ImageModal({ item, onClose }) {
-  useEffect(() => {
-    if (!item) {
-      return undefined;
-    }
-
-    // Keep scroll locked at the current position so modal opening doesn't jump
-    const scrollY = window.scrollY;
-    const previousBodyStyle = {
-      overflow: document.body.style.overflow,
-      position: document.body.style.position,
-      top: document.body.style.top,
-      width: document.body.style.width
-    };
-
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousBodyStyle.overflow;
-      document.body.style.position = previousBodyStyle.position;
-      document.body.style.top = previousBodyStyle.top;
-      document.body.style.width = previousBodyStyle.width;
-      window.scrollTo(0, scrollY);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [item, onClose]);
-
-  const whatsappLink = useMemo(() => (item ? buildWhatsAppMessage(item) : '#'), [item]);
-
-  if (!item) {
-    return null;
-  }
-
+function ModalContent({ item, onClose, whatsappLink }) {
   const title = item.title || item.alt || 'Boutique design';
   const description =
     item.description ||
@@ -73,68 +26,164 @@ export default function ImageModal({ item, onClose }) {
     'A custom boutique design with premium finishing, thoughtful fit, and celebration-ready detailing.';
 
   return (
-    <AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.75)',
+        padding: '16px',
+      }}
+      onClick={onClose}
+    >
       <motion.div
-        className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-ink/70 p-4 backdrop-blur-md"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
+        initial={{ opacity: 0, scale: 0.93 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.93 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: '24px',
+          overflow: 'hidden',
+          width: '100%',
+          maxWidth: '480px',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.35)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
       >
-        <motion.div
-          className="glass-panel relative h-screen w-screen max-h-screen max-w-screen overflow-hidden"
-          initial={{ opacity: 0, scale: 0.96, y: 24 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 24 }}
-          transition={{ duration: 0.28, ease: 'easeOut' }}
-          onClick={(event) => event.stopPropagation()}
-        >
+        {/* Image box — fixed height, image centered inside */}
+        <div style={{
+          backgroundColor: '#f5f4f2',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '340px',
+          position: 'relative',
+        }}>
+          <img
+            src={item.url || item.thumbUrl}
+            alt={title}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+          {/* Close button */}
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-ink shadow-soft"
-            aria-label="Close design preview"
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              border: 'none',
+              backgroundColor: 'rgba(0,0,0,0.45)',
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            aria-label="Close"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M6 6 18 18M18 6 6 18" />
             </svg>
           </button>
+        </div>
 
-          <div className="flex flex-col max-h-[90vh] gap-4 items-center overflow-hidden">
-            <div className="flex w-full min-h-[320px] items-center justify-center overflow-hidden rounded-2xl border border-ink/10 bg-white p-2 lg:p-4">
-              <LazyImage
-                src={item.url || item.thumbUrl}
-                alt={title}
-                priority
-                sizes="(min-width: 1024px) 60vw, 100vw"
-                wrapperClassName="flex h-[70vh] w-full items-center justify-center"
-                className="h-full w-full max-h-[70vh] max-w-full object-contain"
-              />
-            </div>
-            <div className="w-full rounded-2xl border border-ink/10 bg-white/90 p-4 sm:p-6">
-              <div className="space-y-4">
-                <span className="eyebrow">Design Preview</span>
-                <h3 className="font-heading text-3xl leading-tight text-ink sm:text-4xl">{title}</h3>
-                <p className="text-base leading-8 text-stone-600">{description}</p>
-              </div>
-
-              <div className="space-y-3">
-                <a
-                  className="button-primary w-full"
-                  href={whatsappLink}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Order on WhatsApp
-                </a>
-                <button className="button-secondary w-full" type="button" onClick={onClose}>
-                  Continue browsing
-                </button>
-              </div>
-            </div>
+        {/* Info + CTA */}
+        <div style={{ padding: '20px 24px 24px' }}>
+          <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#b98c64', marginBottom: '6px' }}>
+            Design Preview
+          </p>
+          <h3 style={{ fontFamily: '"Playfair Display", serif', fontSize: '22px', lineHeight: 1.3, color: '#1a1a1a', margin: '0 0 6px' }}>
+            {title}
+          </h3>
+          <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, margin: '0 0 18px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {description}
+          </p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '12px 16px',
+                borderRadius: '100px',
+                background: 'linear-gradient(135deg, #1a1a1a, #b98c64)',
+                color: '#fff',
+                fontSize: '13px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Order on WhatsApp
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                borderRadius: '100px',
+                border: '1.5px solid #e5e5e5',
+                backgroundColor: '#fff',
+                color: '#1a1a1a',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Continue browsing
+            </button>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
-    </AnimatePresence>
+    </motion.div>
+  );
+}
+
+export default function ImageModal({ item, onClose }) {
+  useEffect(() => {
+    if (!item) return undefined;
+    document.documentElement.style.overflow = 'hidden';
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.documentElement.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [item, onClose]);
+
+  const whatsappLink = useMemo(() => (item ? buildWhatsAppMessage(item) : '#'), [item]);
+
+  return createPortal(
+    <AnimatePresence>
+      {item && (
+        <ModalContent item={item} onClose={onClose} whatsappLink={whatsappLink} />
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -8,8 +8,8 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({
-    email: 'admin@shrusara.com',
-    password: 'ChangeMe123!'
+    email: '',
+    password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,12 +60,12 @@ export default function Login() {
               Use the admin credentials configured on the server.
             </p>
 
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+            <form className="mt-8 space-y-5" onSubmit={handleSubmit} autoComplete="off">
               <label className="block space-y-2">
                 <span className="text-sm font-medium text-stone-700">Email</span>
                 <input
                   className="w-full rounded-2xl border border-ink/10 bg-linen px-4 py-3 outline-none transition focus:border-cocoa"
-                  type="email"
+                  type="text" autoComplete="new-password"
                   value={form.email}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, email: event.target.value }))
@@ -79,6 +79,7 @@ export default function Login() {
                 <input
                   className="w-full rounded-2xl border border-ink/10 bg-linen px-4 py-3 outline-none transition focus:border-cocoa"
                   type="password"
+                  autoComplete="new-password"
                   value={form.password}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, password: event.target.value }))
@@ -103,4 +104,3 @@ export default function Login() {
     </>
   );
 }
-
