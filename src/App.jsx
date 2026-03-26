@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import WhatsAppButton from './components/WhatsAppButton';
 
+// Existing Lazy Imports
 const Home = lazy(() => import('./pages/Home'));
 const Bridal = lazy(() => import('./pages/Bridal'));
 const Designer = lazy(() => import('./pages/Designer'));
@@ -19,13 +20,14 @@ const Dashboard = lazy(() => import('./admin/Dashboard'));
 const Upload = lazy(() => import('./admin/Upload'));
 const Edit = lazy(() => import('./admin/Edit'));
 
+// NEW LANDING PAGE IMPORT
+const BridalLandingPage = lazy(() => import('./pages/BridalLandingPage'));
+
 function ScrollToTop() {
   const location = useLocation();
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
-
   return null;
 }
 
@@ -47,6 +49,7 @@ function AppRoutes() {
   return (
     <Suspense fallback={<LoadingPage />}>
       <Routes>
+        {/* ROUTES WITH NAVBAR/FOOTER */}
         <Route element={<SiteLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/bridal-blouse-designer-bangalore" element={<Bridal />} />
@@ -57,6 +60,13 @@ function AppRoutes() {
           <Route path="/blog" element={<Blog />} />
         </Route>
 
+        {/* 
+            CONVERSION LANDING PAGE 
+            Placed outside SiteLayout to ensure NO Navbar, NO Footer, and NO global WhatsApp button 
+        */}
+        <Route path="/bridal-blouse-bangalore" element={<BridalLandingPage />} />
+
+        {/* ADMIN ROUTES */}
         <Route path="/admin" element={<Login />} />
         <Route
           path="/admin/dashboard"
@@ -97,6 +107,7 @@ export default function App() {
       void import('./pages/About');
       void import('./pages/Contact');
       void import('./pages/Blog');
+      void import('./pages/BridalLandingPage'); // Added to warmup
     };
 
     if ('requestIdleCallback' in window) {
@@ -105,7 +116,6 @@ export default function App() {
       const timeoutId = window.setTimeout(warmup, 1200);
       return () => window.clearTimeout(timeoutId);
     }
-
     return () => {};
   }, []);
 
